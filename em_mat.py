@@ -34,9 +34,3 @@ def solve(Y, H, iterations, mu):
         print V
     print Y
     return W
-
-H, phi, alpha, W, Y = random_problem(Settings(N = 2, M = 2, K = 2, eta = 0.01, phi_density = 0.5, seed = 0))
-W = solve(Y, H, 100, 0.02)
-print W
-print phi.dot(alpha.T)
-

@@ -3,13 +3,16 @@ import numpy as np
 from problem import random_problem, Settings
 from sklearn.linear_model import Lasso
 
-def solve(Y, H, iterations, mu):
+def solve(Y, H, mu, iterations, epsilon):
     N, K = Y.shape
     M = H.shape[1]
     alpha = np.linalg.norm(Y, axis=0)
     clf = Lasso(alpha=mu)
+    traces = [] # aggregate running info for analysis purposes
     
     for i in range(iterations):
+        alpha_prev = alpha
+
         ### update phi ###
         Z = Y / alpha
         flattened_Z  = Z.flatten('F')
@@ -21,12 +24,13 @@ def solve(Y, H, iterations, mu):
         m = H.dot(phi)
         alpha = m.T.dot(Y) / (m.T.dot(m))
 
-    return phi, alpha
+        obj = 1/2 * np.linalg.norm(Y - np.outer(m, alpha))**2 + mu * np.linalg.norm(phi, 1)
+        traces.append([obj, phi, alpha])
 
+        # convergence check
+        if np.linalg.norm(alpha_prev - alpha) < epsilon:
+            print "Converged in %d iterations." % (i + 1)
+            return phi, alpha, traces
 
-H, phi, alpha, W, Y = random_problem(Settings(N = 3, M = 3, K = 3, eta = 0.01, phi_density = 0.8, seed = 0))
-print phi, alpha
-print phi.dot(alpha.T)
-p, a = solve(Y, H, 100, 0.001)
-print p, a
-print np.reshape(p, (3,1)).dot(np.reshape(alpha, (1, 3)))
+    print "Does not converge in %d iterations." % iterations
+    return phi, alpha, traces
